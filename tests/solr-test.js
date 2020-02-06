@@ -25,6 +25,18 @@ describe('Solr', () => {
 
 		static get fields() {
 			return {
+				some: {
+					type: 'notEqual'
+				},
+				myCustomField: {
+					field: 'date',
+					type: 'greaterOrEqual'
+				}
+			};
+		}
+
+		static get schemas() {
+			return {
 				string: true,
 				number: { type: 'number' },
 				float: { type: 'float' },
@@ -102,6 +114,30 @@ describe('Solr', () => {
 
 	const solr = new Solr({
 		url: host
+	});
+
+	describe('constructor', () => {
+
+		[
+
+			null,
+			undefined,
+			1,
+			'string',
+			['array'],
+			{ invalid: 'config' },
+			{ host: ['not a string'] }
+
+		].forEach(config => {
+
+			it('Should throw when the received config is invalid', async () => {
+				assert.throws(() => new Solr(config), {
+					name: 'SolrError',
+					code: SolrError.codes.INVALID_CONFIG
+				});
+			});
+		});
+
 	});
 
 	describe('insert()', () => {
@@ -339,7 +375,11 @@ describe('Solr', () => {
 					query: '*:*',
 					offset: 5,
 					limit: 5,
-					filter: ['-id:"other-id"', 'some:"data"'],
+					filter: [
+						'id:"some-id"',
+						'-some:"data"',
+						'date:[10 TO *] OR date:[11 TO *] OR date:[12 TO *]'
+					],
 					sort: 'id asc, some desc'
 				})
 				.reply(200, {
@@ -361,8 +401,9 @@ describe('Solr', () => {
 				page: 2,
 				order: { id: 'asc', some: 'desc' },
 				filters: {
-					id: { type: 'notEqual', value: 'other-id' },
-					some: 'data'
+					id: 'some-id',
+					some: 'data',
+					myCustomField: [10, 11, 12]
 				}
 			});
 
@@ -376,12 +417,125 @@ describe('Solr', () => {
 			request.done();
 		});
 
+		it('Should throw when the Solr response code is bigger or equal than 400', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get)
+				.reply(400, {
+					responseHeader: {
+						status: 400
+					}
+				});
+
+			await assert.rejects(solr.get(model), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_FAILED
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the Solr response is invalid', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get)
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					response: {}
+				});
+
+			await assert.rejects(solr.get(model), {
+				name: 'SolrError',
+				code: SolrError.codes.INTERNAL_SOLR_ERROR
+			});
+
+			request.done();
+		});
+
 		it('Should throw when the received model is invalid', async () => {
 
-			await assert.rejects(solr.get(null), {
+			sandbox.stub(FakeModel, 'table')
+				.get(() => undefined);
+
+			await assert.rejects(solr.get(model), {
 				name: 'SolrError',
 				code: SolrError.codes.INVALID_MODEL
 			});
+		});
+	});
+
+	describe('getTotals', () => {
+
+		afterEach(() => {
+			delete model.lastQueryHasResults;
+			delete model.totalsParams;
+		});
+
+		it('Should call Solr GET api to get the items count', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					limit: 500,
+					offset: 0
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					response: {
+						numFound: 10,
+						docs: Array(10).fill({ item: 'some-item' })
+					}
+				})
+				.persist();
+
+			await solr.get(model);
+
+			const result = await solr.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 10,
+				pageSize: 500,
+				pages: 1,
+				page: 1
+			});
+
+			request.done();
+		});
+
+		it('Should return the default empty results when get can \'t find any item', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					limit: 500,
+					offset: 0
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					response: {
+						numFound: 0,
+						docs: []
+					}
+				});
+
+			await solr.get(model);
+
+			const result = await solr.getTotals(model);
+
+			assert.deepStrictEqual(result, { total: 0, pages: 0 });
+
+			request.done();
+		});
+
+		it('Should return the default empty results when get was not called', async () => {
+			const result = await solr.getTotals(model);
+			assert.deepStrictEqual(result, { total: 0, pages: 0 });
 		});
 	});
 
@@ -403,6 +557,31 @@ describe('Solr', () => {
 
 			request.done();
 		});
+
+		it('Should return an empty object when there are no schemas in the model', async () => {
+
+			sandbox.stub(FakeModel, 'schemas')
+				.get(() => undefined);
+
+			const request = nock(host)
+				.post(endpoints.schema)
+				.reply(200);
+
+			await assert.doesNotReject(solr.createSchemas(model));
+
+			assert.deepEqual(request.isDone(), false);
+		});
+
+		it('Should throw when the model is invalid', async () => {
+
+			sandbox.stub(FakeModel, 'schemas')
+				.get(() => ['not an object']);
+
+			await assert.rejects(solr.createSchemas(model), {
+				name: 'SolrError',
+				code: SolrError.codes.INVALID_MODEL
+			});
+		});
 	});
 
 	describe('updateSchemas()', () => {
@@ -422,6 +601,31 @@ describe('Solr', () => {
 			await assert.doesNotReject(solr.updateSchemas(model));
 
 			request.done();
+		});
+
+		it('Should return an empty object when there are no schemas in the model', async () => {
+
+			sandbox.stub(FakeModel, 'schemas')
+				.get(() => undefined);
+
+			const request = nock(host)
+				.post(endpoints.schema)
+				.reply(200);
+
+			await assert.doesNotReject(solr.updateSchemas(model));
+
+			assert.deepEqual(request.isDone(), false);
+		});
+
+		it('Should throw when the model is invalid', async () => {
+
+			sandbox.stub(FakeModel, 'schemas')
+				.get(() => ['not an object']);
+
+			await assert.rejects(solr.updateSchemas(model), {
+				name: 'SolrError',
+				code: SolrError.codes.INVALID_MODEL
+			});
 		});
 	});
 });
