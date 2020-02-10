@@ -19,10 +19,6 @@ describe('Solr', () => {
 
 	class FakeModel {
 
-		static get table() {
-			return 'some-core';
-		}
-
 		static get fields() {
 			return {
 				some: {
@@ -35,7 +31,7 @@ describe('Solr', () => {
 			};
 		}
 
-		static get schemas() {
+		static get schema() {
 			return {
 				string: true,
 				number: { type: 'number' },
@@ -113,7 +109,8 @@ describe('Solr', () => {
 	const model = new FakeModel();
 
 	const solr = new Solr({
-		url: host
+		url: host,
+		core: 'some-core'
 	});
 
 	describe('constructor', () => {
@@ -126,7 +123,8 @@ describe('Solr', () => {
 			'string',
 			['array'],
 			{ invalid: 'config' },
-			{ host: ['not a string'] }
+			{ url: ['not a string'], core: 'valid' },
+			{ url: 'valid', core: ['not a string'] }
 
 		].forEach(config => {
 
@@ -161,14 +159,6 @@ describe('Solr', () => {
 
 			assert.deepEqual(result, item.id);
 			request.done();
-		});
-
-		it('Should throw when the received model is invalid', async () => {
-
-			await assert.rejects(solr.insert(null, item), {
-				name: 'SolrError',
-				code: SolrError.codes.INVALID_MODEL
-			});
 		});
 
 		[
@@ -254,17 +244,6 @@ describe('Solr', () => {
 
 			assert.deepStrictEqual(result, items);
 			request.done();
-		});
-
-		it('Should throw when the received model is invalid', async () => {
-
-			sandbox.stub(FakeModel, 'fields')
-				.get(() => []);
-
-			await assert.rejects(solr.multiInsert(model, items), {
-				name: 'SolrError',
-				code: SolrError.codes.INVALID_MODEL
-			});
 		});
 
 		[
@@ -456,8 +435,8 @@ describe('Solr', () => {
 
 		it('Should throw when the received model is invalid', async () => {
 
-			sandbox.stub(FakeModel, 'table')
-				.get(() => undefined);
+			sandbox.stub(FakeModel, 'fields')
+				.get(() => ['not an object']);
 
 			await assert.rejects(solr.get(model), {
 				name: 'SolrError',
@@ -539,9 +518,9 @@ describe('Solr', () => {
 		});
 	});
 
-	describe('createSchemas()', () => {
+	describe('createSchema()', () => {
 
-		it('Should call Solr POST api to create the schemas', async () => {
+		it('Should call Solr POST api to create the schema using core name from config', async () => {
 
 			const request = nock(host)
 				.post(endpoints.schema, {
@@ -553,40 +532,57 @@ describe('Solr', () => {
 					}
 				});
 
-			await assert.doesNotReject(solr.createSchemas(model));
+			await assert.doesNotReject(solr.createSchema(model));
 
 			request.done();
 		});
 
-		it('Should return an empty object when there are no schemas in the model', async () => {
+		it('Should call Solr POST api to create the schema using the specified core name', async () => {
 
-			sandbox.stub(FakeModel, 'schemas')
+			const request = nock(host)
+				.post('/solr/foobar-core/schema', {
+					'add-field': builtSchemas
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.createSchema(model, 'foobar-core'));
+
+			request.done();
+		});
+
+		it('Should return an empty object when there are no schema in the model', async () => {
+
+			sandbox.stub(FakeModel, 'schema')
 				.get(() => undefined);
 
 			const request = nock(host)
 				.post(endpoints.schema)
 				.reply(200);
 
-			await assert.doesNotReject(solr.createSchemas(model));
+			await assert.doesNotReject(solr.createSchema(model));
 
 			assert.deepEqual(request.isDone(), false);
 		});
 
 		it('Should throw when the model is invalid', async () => {
 
-			sandbox.stub(FakeModel, 'schemas')
+			sandbox.stub(FakeModel, 'schema')
 				.get(() => ['not an object']);
 
-			await assert.rejects(solr.createSchemas(model), {
+			await assert.rejects(solr.createSchema(model), {
 				name: 'SolrError',
 				code: SolrError.codes.INVALID_MODEL
 			});
 		});
 	});
 
-	describe('updateSchemas()', () => {
+	describe('updateSchema()', () => {
 
-		it('Should call Solr POST api to create the schemas', async () => {
+		it('Should call Solr POST api to create the schema', async () => {
 
 			const request = nock(host)
 				.post(endpoints.schema, {
@@ -598,34 +594,73 @@ describe('Solr', () => {
 					}
 				});
 
-			await assert.doesNotReject(solr.updateSchemas(model));
+			await assert.doesNotReject(solr.updateSchema(model));
 
 			request.done();
 		});
 
-		it('Should return an empty object when there are no schemas in the model', async () => {
+		it('Should return an empty object when there are no schema in the model', async () => {
 
-			sandbox.stub(FakeModel, 'schemas')
+			sandbox.stub(FakeModel, 'schema')
 				.get(() => undefined);
 
 			const request = nock(host)
 				.post(endpoints.schema)
 				.reply(200);
 
-			await assert.doesNotReject(solr.updateSchemas(model));
+			await assert.doesNotReject(solr.updateSchema(model));
 
 			assert.deepEqual(request.isDone(), false);
 		});
 
 		it('Should throw when the model is invalid', async () => {
 
-			sandbox.stub(FakeModel, 'schemas')
-				.get(() => ['not an object']);
-
-			await assert.rejects(solr.updateSchemas(model), {
+			await assert.rejects(solr.updateSchema(), {
 				name: 'SolrError',
 				code: SolrError.codes.INVALID_MODEL
 			});
+		});
+	});
+
+	describe('createCore()', () => {
+
+		it('Should create a core into the Solr URL', async () => {
+
+			sandbox.stub(Solr.prototype, 'createSchema')
+				.returns();
+
+			const request = nock(host)
+				.post('/solr/admin/cores?action=CREATE&name=new-core&configSet=_default')
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.createCore(model, 'new-core'));
+
+			request.done();
+			sandbox.assert.calledOnce(Solr.prototype.createSchema);
+			sandbox.assert.calledWithExactly(Solr.prototype.createSchema, model, 'new-core');
+		});
+
+		it('Should not reject when the received model is invalid', async () => {
+
+			sandbox.stub(Solr.prototype, 'createSchema')
+				.returns();
+
+			const request = nock(host)
+				.post('/solr/admin/cores?action=CREATE&name=new-core&configSet=_default')
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.createCore(null, 'new-core'));
+
+			assert.deepEqual(request.isDone(), false);
+			sandbox.assert.notCalled(Solr.prototype.createSchema);
 		});
 	});
 });

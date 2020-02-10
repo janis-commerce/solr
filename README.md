@@ -225,40 +225,41 @@ Return example:
 
 If no query was executed before, it will just return the `total` and `pages` properties with a value of zero.
 
-### ***async*** `createSchemas(model)`
-Build the schemas using the schemas defined in the model static getter `schemas`.  
+### ***async*** `createSchema(model, core)`
+Build the fields schema using the schema defined in the model static getter `schema`.  
 
 - model `Model`: A model instance
+- core `String`: The core where the field schema will created. Default: `core` value from instance config.
 
 - Rejects: `SolrError`: When something bad occurs
 
 - **IMPORTANT**:
 	- This method must be executed before any operation, otherwise Solr will set all new fields as an `array` of `strings`.
-	- This method can't replace or delete already existing schemas in Solr.
+	- This method can't replace or delete already existing fields schema in Solr.
 
-If you need details about how to define the schemas in the model, see the schemas [below](#schemas)
+If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
 
-### ***async*** `updateSchemas(model)`
-Update the schemas by replacing the current schemas in Solr with the schemas defined in the model static getter `schemas`.
-**IMPORTANT**: This method can't create or delete already existing schemas in Solr.
+### ***async*** `updateSchema(model)`
+Update the fields schema by replacing the current fields schema in Solr with the defined in the model static getter `schema`.
+**IMPORTANT**: This method can't create or delete already existing fields schema in Solr.
 
 - model `Model`: A model instance
 
 - Rejects: `SolrError`: When something bad occurs
 
-If you need details about how to define the schemas in the model, see the schemas [below](#schemas)
+If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
 
-#### Schemas
+#### Fields schema
 
-The schemas are required by Solr to use the correct data types on every field, by default, Solr sets new fields as an `array` of `strings`, even in objects and his properties.
+The fields schema are required by Solr to use the correct data types on every field, by default, Solr sets new fields as an `array` of `strings`, even in objects and his properties.
 
 **Field types**
 
-The field types can be defined in the model static getter `schemas` like this:
+The field types can be defined in the model static getter `schema` like this:
 ```js
 class MyModel extends Model {
 
-	static get schemas(){
+	static get schema(){
 
 		return {
 			myStringField: true, // Default type string
@@ -350,6 +351,14 @@ These fields stores an object with multiple properties that **can be of differen
 
 It will show as a **full object** on `get` operations.
 
+### ***async*** `createCore(model, name)`
+Creates a new core in the Solr URL, then build the fields schema for that core.
+
+- model `Model`: A model instance
+- name `String`: The name for the core to create
+
+- Rejects: `SolrError`: When something bad occurs
+
 ## Errors
 
 The errors are informed with a `SolrError`.
@@ -420,11 +429,13 @@ const model = new Model();
 	await solr.getTotals(model);
 	// > { page: 1, limit: 500, pages: 1, total: 4 }
 
-	// createSchemas
-	await solr.createSchemas(model);
+	// createSchema
+	await solr.createSchema(model);
 	
-	// updateSchemas
-	await solr.updateSchemas(model);
+	// updateSchema
+	await solr.updateSchema(model);
+
+	// createCore
 
 })();
 ```
