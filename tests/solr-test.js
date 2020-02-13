@@ -6,6 +6,8 @@ const nock = require('nock');
 
 const sandbox = require('sinon').createSandbox();
 
+const { base64 } = require('../lib/helpers/utils');
+
 const Solr = require('../lib/solr');
 
 const SolrError = require('../lib/solr-error');
@@ -102,6 +104,7 @@ describe('Solr', () => {
 
 	const endpoints = {
 		update: '/solr/some-core/update/json/docs?commit=true',
+		updateCommands: '/solr/some-core/update?commit=true',
 		get: '/solr/some-core/query',
 		schema: '/solr/some-core/schema'
 	};
@@ -124,7 +127,11 @@ describe('Solr', () => {
 			['array'],
 			{ invalid: 'config' },
 			{ url: ['not a string'], core: 'valid' },
-			{ url: 'valid', core: ['not a string'] }
+			{ url: 'valid', core: ['not a string'] },
+			{ url: 'valid', core: 'valid', user: ['not a string'], password: 'valid' },
+			{ url: 'valid', core: 'valid', user: 'valid', password: ['not a string'] },
+			{ url: 'valid', core: 'valid', user: 'valid' },
+			{ url: 'valid', core: 'valid', password: 'valid' }
 
 		].forEach(config => {
 
@@ -396,6 +403,58 @@ describe('Solr', () => {
 			request.done();
 		});
 
+		it('Should call Solr GET api to get the items using auth credentials', async () => {
+
+			const authorizedSolr = new Solr({
+				url: host,
+				core: 'some-core',
+				user: 'some-user',
+				password: 'some-password'
+			});
+
+			const expectedCredentials = `Basic ${base64('some-user:some-password')}`;
+
+			const request = nock(host, { reqheaders: { Authorization: expectedCredentials } })
+				.get(endpoints.get, {
+					query: '*:*',
+					offset: 0,
+					limit: 500
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					response: {
+						docs: [
+							{
+								id: 'some-id',
+								some: 'data',
+								'object.property': 'some-property',
+								'object.subproperty.property': [1, 2, 3],
+								_version_: 1122111221
+							}
+						]
+					}
+				});
+
+			const result = await authorizedSolr.get(model);
+
+			assert.deepStrictEqual(result, [
+				{
+					id: 'some-id',
+					some: 'data',
+					object: {
+						property: 'some-property',
+						subproperty: {
+							property: [1, 2, 3]
+						}
+					}
+				}
+			]);
+
+			request.done();
+		});
+
 		it('Should throw when the Solr response code is bigger or equal than 400', async () => {
 
 			const request = nock(host)
@@ -445,7 +504,7 @@ describe('Solr', () => {
 		});
 	});
 
-	describe('getTotals', () => {
+	describe('getTotals()', () => {
 
 		afterEach(() => {
 			delete model.lastQueryHasResults;
@@ -515,6 +574,263 @@ describe('Solr', () => {
 		it('Should return the default empty results when get was not called', async () => {
 			const result = await solr.getTotals(model);
 			assert.deepStrictEqual(result, { total: 0, pages: 0 });
+		});
+	});
+
+	describe('remove()', () => {
+
+		const item = {
+			id: 'some-id',
+			some: 'data'
+		};
+
+		it('Should call Solr POST api to delete the received item', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {
+					delete: { id: item.id }
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.remove(model, item));
+
+			request.done();
+		});
+
+		[
+
+			null,
+			undefined,
+			'string',
+			1,
+			['array'],
+			{ item: 'without id' }
+
+		].forEach(invalidItem => {
+
+			it('Should throw when the received item is not an object or not have ID', async () => {
+
+				await assert.rejects(solr.remove(model, invalidItem), {
+					name: 'SolrError',
+					code: SolrError.codes.INVALID_PARAMETERS
+				});
+			});
+		});
+
+		it('Should throw when the Solr response code is bigger or equal than 400', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {
+					delete: { id: item.id }
+				})
+				.reply(400, {
+					responseHeader: {
+						status: 400
+					}
+				});
+
+			await assert.rejects(solr.remove(model, item), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_FAILED
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the Solr response is invalid', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {
+					delete: { id: item.id }
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 1
+					}
+				});
+
+			await assert.rejects(solr.remove(model, item), {
+				name: 'SolrError',
+				code: SolrError.codes.INTERNAL_SOLR_ERROR
+			});
+
+			request.done();
+		});
+	});
+
+	describe('multiRemove()', () => {
+
+		it('Should call Solr POST api to delete by the received filters', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {
+					delete: { query: 'field:"value" AND otherField:[* TO 10]' }
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.mutliRemove(model, { field: 'value', otherField: { type: 'lesserOrEqual', value: 10 } }));
+
+			request.done();
+		});
+
+		it('Should throw when the Solr response code is bigger or equal than 400', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {})
+				.reply(400, {
+					responseHeader: {
+						status: 400
+					}
+				});
+
+			await assert.rejects(solr.mutliRemove(model), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_FAILED
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the Solr response is invalid', async () => {
+
+			const request = nock(host)
+				.post(endpoints.updateCommands, {
+					delete: { query: 'field:"value"' }
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 1
+					}
+				});
+
+			await assert.rejects(solr.mutliRemove(model, { field: 'value' }), {
+				name: 'SolrError',
+				code: SolrError.codes.INTERNAL_SOLR_ERROR
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the received model is invalid', async () => {
+
+			await assert.rejects(solr.mutliRemove(), {
+				name: 'SolrError',
+				code: SolrError.codes.INVALID_MODEL
+			});
+		});
+	});
+
+	describe('distinct()', () => {
+
+		it('Should call Solr GET api to get the items distinct and format it correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					fields: 'someField',
+					params: {
+						group: true,
+						'group.field': 'someField'
+					},
+					filter: ['otherField:"true"']
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					grouped: {
+						someField: {
+							groups: [
+								{
+									doclist: { docs: [{ someField: 'some' }] }
+								},
+								{
+									doclist: { docs: [{ someField: 'other' }] }
+								}
+							]
+						}
+					}
+				});
+
+			const result = await solr.distinct(model, { key: 'someField', filters: { otherField: true } });
+
+			assert.deepStrictEqual(result, ['some', 'other']);
+
+			request.done();
+		});
+
+		it('Should throw when the received key is not a string or not exists', async () => {
+
+			await assert.rejects(solr.distinct(model, { key: ['not a string'] }), {
+				name: 'SolrError',
+				code: SolrError.codes.INVALID_PARAMETERS
+			});
+		});
+
+		it('Should throw when the Solr response code is bigger or equal than 400', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					fields: 'someField',
+					params: {
+						group: true,
+						'group.field': 'someField'
+					}
+				})
+				.reply(400, {
+					responseHeader: {
+						status: 400
+					}
+				});
+
+			await assert.rejects(solr.distinct(model, { key: 'someField' }), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_FAILED
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the Solr response is invalid', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					fields: 'someField',
+					params: {
+						group: true,
+						'group.field': 'someField'
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 1
+					}
+				});
+
+			await assert.rejects(solr.distinct(model, { key: 'someField' }), {
+				name: 'SolrError',
+				code: SolrError.codes.INTERNAL_SOLR_ERROR
+			});
+
+			request.done();
+		});
+
+		it('Should throw when the received model is invalid', async () => {
+
+			await assert.rejects(solr.distinct(), {
+				name: 'SolrError',
+				code: SolrError.codes.INVALID_MODEL
+			});
 		});
 	});
 
