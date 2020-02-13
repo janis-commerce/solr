@@ -23,11 +23,17 @@ Constructs the Solr driver instance, connected with the `config` object.
 **Config properties**
 
 - url `String` (required): Solr URL
+- core `String` (required): Solr Core
+- user `String` (optional): Auth user
+- password `String` (optional but required if an user is specified): Auth password
 
 **Config usage**
 ```js
 {
-	url: 'http://localhost:8983'
+	url: 'http://localhost:8983',
+	core: 'some-core',
+	user: 'some-user',
+	password: 'some-password'
 }
 ```
 
@@ -48,6 +54,15 @@ Inserts multiple documents in a solr core
 
 - Resolves: `Array<Object>`: Items inserted
 - Rejects: `SolrError` When something bad occurs
+
+### ***async*** `distict(model, [parameters])`
+Searches distinct values of a property in a solr core
+
+- model: `Model`: A model instance
+- parameters: `Object` (optional): The query parameters. Default: {}. It only accepts `key` (the field name to get distinct values from), and `filters` -- described below in `get()` method.
+
+- Resolves `Array<Object>`: An array of documents
+- Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `get(model, [parameters])`
 Searches documents in a solr core
@@ -224,6 +239,22 @@ Return example:
 ```
 
 If no query was executed before, it will just return the `total` and `pages` properties with a value of zero.
+
+### ***async*** `remove(model, item)`
+Removes a document in a solr core
+
+- model: `Model`: A model instance
+- item: `Object`: The item to be removed
+
+- Rejects `SolrError`: When something bad occurs
+
+### ***async*** `multiRemove(model, filters)`
+Removes one or more documents in a solr core
+
+- model: `Model`: A model instance
+- filters: `Object`: Filters criteria to match documents
+
+- Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `createSchema(model, core)`
 Build the fields schema using the schema defined in the model static getter `schema`.  
@@ -429,6 +460,16 @@ const model = new Model();
 	await solr.getTotals(model);
 	// > { page: 1, limit: 500, pages: 1, total: 4 }
 
+	// distinct
+	await solr.distinct(model, { key: 'fieldName', filters: { someField: true } });
+	// > ['some-value', 'other-value']
+
+	// remove
+	await solr.remove(model, { id: 'some-id', field: 'value' });
+
+	// multiRemove
+	await solr.multiRemove(model, { field: { type: 'greater', value: 10 } });
+
 	// createSchema
 	await solr.createSchema(model);
 	
@@ -436,6 +477,6 @@ const model = new Model();
 	await solr.updateSchema(model);
 
 	// createCore
-
+	await solr.createCore(model, 'new-core');
 })();
 ```
