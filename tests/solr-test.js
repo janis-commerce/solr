@@ -129,6 +129,7 @@ describe('Solr', () => {
 			{ url: ['not a string'], core: 'valid' },
 			{ url: 'valid', core: ['not a string'] },
 			{ url: 'valid', core: 'valid', user: ['not a string'], password: 'valid' },
+			{ url: 'valid', core: 'valid', user: ['not a string'], password: ['not a string'] },
 			{ url: 'valid', core: 'valid', user: 'valid', password: ['not a string'] },
 			{ url: 'valid', core: 'valid', user: 'valid' },
 			{ url: 'valid', core: 'valid', password: 'valid' }
