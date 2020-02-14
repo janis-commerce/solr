@@ -8,3 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Solr DB Driver Package
+- `endpoint` helper
+- `filters` helper
+- `query` helper
+- `request` helper
+- `response` helper
+- `schema` helper
+- `utils` helper
+- `insert` and `multiInsert` methods
+- `remove` and `multiRemove` methods
+- `get` and `getTotals` methods
+- `distinct` method
+- `createSchemas`, `updateSchemas` and `createCore` methods

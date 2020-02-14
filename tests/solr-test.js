@@ -255,7 +255,6 @@ describe('Solr', () => {
 		});
 
 		[
-
 			null,
 			undefined,
 			'string',
@@ -677,7 +676,7 @@ describe('Solr', () => {
 					}
 				});
 
-			await assert.doesNotReject(solr.mutliRemove(model, { field: 'value', otherField: { type: 'lesserOrEqual', value: 10 } }));
+			await assert.doesNotReject(solr.multiRemove(model, { field: 'value', otherField: { type: 'lesserOrEqual', value: 10 } }));
 
 			request.done();
 		});
@@ -692,7 +691,7 @@ describe('Solr', () => {
 					}
 				});
 
-			await assert.rejects(solr.mutliRemove(model), {
+			await assert.rejects(solr.multiRemove(model), {
 				name: 'SolrError',
 				code: SolrError.codes.REQUEST_FAILED
 			});
@@ -712,7 +711,7 @@ describe('Solr', () => {
 					}
 				});
 
-			await assert.rejects(solr.mutliRemove(model, { field: 'value' }), {
+			await assert.rejects(solr.multiRemove(model, { field: 'value' }), {
 				name: 'SolrError',
 				code: SolrError.codes.INTERNAL_SOLR_ERROR
 			});
@@ -722,7 +721,7 @@ describe('Solr', () => {
 
 		it('Should throw when the received model is invalid', async () => {
 
-			await assert.rejects(solr.mutliRemove(), {
+			await assert.rejects(solr.multiRemove(), {
 				name: 'SolrError',
 				code: SolrError.codes.INVALID_MODEL
 			});
