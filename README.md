@@ -246,6 +246,7 @@ Removes a document in a solr core
 - model: `Model`: A model instance
 - item: `Object`: The item to be removed
 
+- Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `multiRemove(model, filters)`
@@ -254,6 +255,7 @@ Removes one or more documents in a solr core
 - model: `Model`: A model instance
 - filters: `Object`: Filters criteria to match documents
 
+- Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `createSchema(model, core)`
@@ -466,9 +468,11 @@ const model = new Model();
 
 	// remove
 	await solr.remove(model, { id: 'some-id', field: 'value' });
+	// > true
 
 	// multiRemove
 	await solr.multiRemove(model, { field: { type: 'greater', value: 10 } });
+	// > true
 
 	// createSchema
 	await solr.createSchema(model);
