@@ -37,6 +37,142 @@ Constructs the Solr driver instance, connected with the `config` object.
 }
 ```
 
+### ***async*** `createCore(model, name)`
+Creates a new core in the Solr URL, then build the fields schema for that core.
+
+- model `Model`: A model instance
+- name `String`: The name for the core to create
+
+- Rejects: `SolrError`: When something bad occurs
+
+### ***async*** `createSchema(model, core)`
+Build the fields schema using the schema defined in the model static getter `schema`.  
+
+- model `Model`: A model instance
+- core `String`: The core where the field schema will created. Default: `core` value from instance config.
+
+- Rejects: `SolrError`: When something bad occurs
+
+- **IMPORTANT**:
+	- This method must be executed before any operation, otherwise Solr will set all new fields as an `array` of `strings`.
+	- This method can't replace or delete already existing fields schema in Solr.
+
+If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
+
+### ***async*** `updateSchema(model)`
+Update the fields schema by replacing the current fields schema in Solr with the defined in the model static getter `schema`.
+**IMPORTANT**: This method can't create or delete already existing fields schema in Solr.
+
+- model `Model`: A model instance
+
+- Rejects: `SolrError`: When something bad occurs
+
+If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
+
+#### Fields schema
+
+The fields schema are required by Solr to use the correct data types on every field, by default, Solr sets new fields as an `array` of `strings`, even in objects and his properties.
+
+**Field types**
+
+The field types can be defined in the model static getter `schema` like this:
+```js
+class MyModel extends Model {
+
+	static get schema(){
+
+		return {
+			myStringField: true, // Default type string
+			myNumberString: { type: 'number' },
+			myArrayOfStrings: { type: ['string'] },
+			myObject: {
+				type: {
+					property: 'string'
+				}
+			}
+		}
+	}
+}
+```
+
+The following table shows all the supported field types:
+
+| Type           | Solr equivalence |
+| -------------- | ---------------- |
+| string         | string           |
+| boolean        | boolean          |
+| date           | pdate            |
+| number         | pint             |
+| float          | pfloat           |
+| double         | pdouble          |
+| long           | plong            |
+
+In case of an array field, the Solr equivalence will be the same for each field, only will set the `multiValued` property to `true`.
+
+If the type isn't defined, it defaults to `string`.
+
+**Single valued field**
+
+These are the most common fields, only stores a single value:
+```js
+{
+	myField: { type: 'number' },
+	myOtherField: { type: 'date' }
+}
+```
+
+**Multi valued fields (Array)**
+
+These fields stores an array with multiple values **of the same type**:
+```js
+{
+	myField: { type: ['string'] }, // Array of strings
+	myOtherField: { type: ['number'] } // Array of numbers
+}
+```
+
+**Objects (JSON)**
+
+These fields stores an object with multiple properties that **can be of different types**:
+```js
+{
+	myField: {
+		type: {
+			property: 'string',
+			subProperty: {
+				property: ['string']
+			},
+			otherProperty: 'date'
+		}
+	}
+}
+```
+
+**IMPORTANT**: Due Solr compatibility issues, the object fields will be created **internally** as single fields like this:
+```js
+// Schema
+{
+	myField: {
+		type: {
+			property: 'string',
+			otherProperty: 'number',
+			subProperty: {
+				property: ['float']
+			}
+		}
+	}
+}
+
+// Formatted for Solr
+{
+	'myField.property': { type: 'string' },
+	'myField.otherProperty': { type: 'number' },
+	'myField.subProperty.property': { type: ['float'] }
+}
+```
+
+It will show as a **full object** on `get` operations.
+
 ### ***async*** `insert(model, item)`
 Inserts one document in a solr core
 
@@ -55,11 +191,11 @@ Inserts multiple documents in a solr core
 - Resolves: `Array<Object>`: Items inserted
 - Rejects: `SolrError` When something bad occurs
 
-### ***async*** `distict(model, [parameters])`
+### ***async*** `distinct(model, [parameters])`
 Searches distinct values of a property in a solr core
 
 - model: `Model`: A model instance
-- parameters: `Object` (optional): The query parameters. Default: {}. It only accepts `key` (the field name to get distinct values from), and `filters` -- described below in `get()` method.
+- parameters: `Object` (required): The query parameters. It only accepts `key` (the field name to get distinct values from), and `filters` -- described below in `get()` method.
 
 - Resolves `Array<Object>`: An array of documents
 - Rejects `SolrError`: When something bad occurs
@@ -244,7 +380,7 @@ If no query was executed before, it will just return the `total` and `pages` pro
 Removes a document in a solr core
 
 - model: `Model`: A model instance
-- item: `Object`: The item to be removed
+- item: `Object`: The item to be removed. **IMPORTANT**: The received item must have an `id` in order to remove it, otherwise the function will reject.
 
 - Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
@@ -257,140 +393,6 @@ Removes one or more documents in a solr core
 
 - Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
-
-### ***async*** `createSchema(model, core)`
-Build the fields schema using the schema defined in the model static getter `schema`.  
-
-- model `Model`: A model instance
-- core `String`: The core where the field schema will created. Default: `core` value from instance config.
-
-- Rejects: `SolrError`: When something bad occurs
-
-- **IMPORTANT**:
-	- This method must be executed before any operation, otherwise Solr will set all new fields as an `array` of `strings`.
-	- This method can't replace or delete already existing fields schema in Solr.
-
-If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
-
-### ***async*** `updateSchema(model)`
-Update the fields schema by replacing the current fields schema in Solr with the defined in the model static getter `schema`.
-**IMPORTANT**: This method can't create or delete already existing fields schema in Solr.
-
-- model `Model`: A model instance
-
-- Rejects: `SolrError`: When something bad occurs
-
-If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
-
-#### Fields schema
-
-The fields schema are required by Solr to use the correct data types on every field, by default, Solr sets new fields as an `array` of `strings`, even in objects and his properties.
-
-**Field types**
-
-The field types can be defined in the model static getter `schema` like this:
-```js
-class MyModel extends Model {
-
-	static get schema(){
-
-		return {
-			myStringField: true, // Default type string
-			myNumberString: { type: 'number' },
-			myArrayOfStrings: { type: ['string'] },
-			myObject: {
-				property: 'string'
-			}
-		}
-	}
-}
-```
-
-The following table shows all the supported field types:
-
-| Type           | Solr equivalence |
-| -------------- | ---------------- |
-| string         | string           |
-| boolean        | boolean          |
-| date           | pdate            |
-| number         | pint             |
-| float          | pfloat           |
-| double         | pdouble          |
-| long           | plong            |
-
-In case of an array field, the Solr equivalence will be the same for each field, only will set the `multiValued` property to `true`.
-
-If the type isn't defined, it defaults to `string`.
-
-**Single valued field**
-
-These are the most common fields, only stores a single value:
-```js
-{
-	myField: { type: 'number' },
-	myOtherField: { type: 'date' }
-}
-```
-
-**Multi valued fields (Array)**
-
-These fields stores an array with multiple values **of the same type**:
-```js
-{
-	myField: { type: ['string'] }, // Array of strings
-	myOtherField: { type: ['number'] } // Array of numbers
-}
-```
-
-**Objects (JSON)**
-
-These fields stores an object with multiple properties that **can be of different types**:
-```js
-{
-	myField: {
-		type: {
-			property: 'string',
-			subProperty: {
-				property: ['string']
-			},
-			otherProperty: 'date'
-		}
-	}
-}
-```
-
-**IMPORTANT**: Due Solr compatibility issues, the object fields will be created **internally** as single fields like this:
-```js
-// Schema
-{
-	myField: {
-		type: {
-			property: 'string',
-			otherProperty: 'number',
-			subProperty: {
-				property: ['float']
-			}
-		}
-	}
-}
-
-// Formatted for Solr
-{
-	'myField.property': { type: 'string' },
-	'myField.otherProperty': { type: 'number' },
-	'myField.subProperty.property': { type: ['float'] }
-}
-```
-
-It will show as a **full object** on `get` operations.
-
-### ***async*** `createCore(model, name)`
-Creates a new core in the Solr URL, then build the fields schema for that core.
-
-- model `Model`: A model instance
-- name `String`: The name for the core to create
-
-- Rejects: `SolrError`: When something bad occurs
 
 ## Errors
 
