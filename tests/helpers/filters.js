@@ -42,29 +42,22 @@ describe('Helpers', () => {
 				assert.deepStrictEqual(filters, [
 					'equalDefault:"something"',
 					'customDefault:[32 TO *]',
-					'equal:"something" OR -equal:"foobar"',
+					'equal:"something"',
 					'-notEqual:"something"',
 					'greater:{10 TO *}',
 					'greaterOrEqual:[10 TO *]',
 					'lesser:{* TO 10}',
 					'lesserOrEqual:[* TO 10]',
-					'multiFilters:"some" OR multiFilters:"other" OR multiFilters:{5 TO *}'
+					'multiFilters:"some" OR multiFilters:"other" OR multiFilters:{5 TO *}',
+					'-equal:"foobar"'
 				]);
 			});
 
-			[
+			it('Should throw when the received filters is not supported', () => {
 
-				{ field: { type: 'equal', value: ['array'] } },
-				{ field: { type: 'equal', value: { an: 'object' } } }
-
-			].forEach(filters => {
-
-				it('Should throw when the received filters is not supported', () => {
-
-					assert.throws(() => Filters.build(filters), {
-						name: 'SolrError',
-						code: SolrError.codes.UNSUPPORTED_FILTER
-					});
+				assert.throws(() => Filters.build({ field: { type: 'equal', value: ['somevalue', ['array']] } }), {
+					name: 'SolrError',
+					code: SolrError.codes.UNSUPPORTED_FILTER
 				});
 			});
 
