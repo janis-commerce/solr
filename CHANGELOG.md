@@ -12,11 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - `updateSchema` method now obtains the existing schema from Solr then synces it with model schema
-- `createCore` method
-	- **Usage parameters changed:**
-		- Not receives the core name anymore, it uses the core from the instance config.
-		- Can set if want to create the schemas after creating the core.
-	- Now verify if the core to create exists, then creates it only if not exists.
+- `createCore` method: Not receives the core name anymore, it uses the core from the instance config.
+	Also Can set if want to create the schemas after creating the core.
+	And now checks if the core to create exists, then creates it only if not exists.
 
 ### Removed
 - `createSchema` method, use `updateSchema` method instead
