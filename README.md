@@ -194,7 +194,7 @@ Inserts multiple documents in a solr core
 Searches distinct values of a property in a solr core
 
 - model: `Model`: A model instance
-- parameters: `Object` (required): The query parameters. It only accepts `key` (the field name to get distinct values from), and `filters` -- described below in `get()` method.
+- parameters: `Object` (required): The query parameters. It accepts `key` (the field name to get distinct values from), `filters`, `limit` and `page` -- described below in `get()` method.
 
 - Resolves `Array<Object>`: An array of documents
 - Rejects `SolrError`: When something bad occurs
@@ -464,7 +464,7 @@ const model = new Model();
 	// > { page: 1, limit: 500, pages: 1, total: 4 }
 
 	// distinct
-	await solr.distinct(model, { key: 'fieldName', filters: { someField: true } });
+	await solr.distinct(model, { key: 'fieldName', limit: 40, page: 5 filters: { someField: true } });
 	// > ['some-value', 'other-value']
 
 	// remove
@@ -474,14 +474,21 @@ const model = new Model();
 	// multiRemove
 	await solr.multiRemove(model, { field: { type: 'greater', value: 10 } });
 	// > true
-
-	// createSchema
-	await solr.createSchema(model);
 	
+	// getSchema
+	await solr.getSchema()
+	// > [{ name: 'someField', type: 'string }]
+
 	// updateSchema
 	await solr.updateSchema(model);
+	// > true
 
 	// createCore
-	await solr.createCore(model, 'new-core');
+	await solr.createCore(model);
+	// > true
+
+	// coreExists
+	await sorl.coreExists()
+	// > true
 })();
 ```

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Added
 - `getSchema` method
 - `coreExists` method
+- limit and page support for `distinct` method
 
 ### Changed
 - `updateSchema` method now obtains the existing schema from Solr then synces it with model schema

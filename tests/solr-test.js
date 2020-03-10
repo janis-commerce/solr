@@ -738,7 +738,45 @@ describe('Solr', () => {
 					fields: 'someField',
 					params: {
 						group: true,
-						'group.field': 'someField'
+						'group.field': 'someField',
+						'group.limit': 1,
+						'group.main': true,
+						rows: 500,
+						start: 0
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					response: {
+						docs: [
+							{ someField: 'some' },
+							{ someField: 'other' }
+						]
+					}
+				});
+
+			const result = await solr.distinct(model, { key: 'someField' });
+
+			assert.deepStrictEqual(result, ['some', 'other']);
+
+			request.done();
+		});
+
+		it('Should call Solr GET api to get the items distinct with specified params', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					fields: 'someField',
+					params: {
+						group: true,
+						'group.field': 'someField',
+						'group.limit': 1,
+						'group.main': true,
+						rows: 60,
+						start: 60
 					},
 					filter: ['otherField:"true"']
 				})
@@ -746,21 +784,15 @@ describe('Solr', () => {
 					responseHeader: {
 						status: 0
 					},
-					grouped: {
-						someField: {
-							groups: [
-								{
-									doclist: { docs: [{ someField: 'some' }] }
-								},
-								{
-									doclist: { docs: [{ someField: 'other' }] }
-								}
-							]
-						}
+					response: {
+						docs: [
+							{ someField: 'some' },
+							{ someField: 'other' }
+						]
 					}
 				});
 
-			const result = await solr.distinct(model, { key: 'someField', filters: { otherField: true } });
+			const result = await solr.distinct(model, { page: 2, limit: 60, key: 'someField', filters: { otherField: true } });
 
 			assert.deepStrictEqual(result, ['some', 'other']);
 
@@ -783,7 +815,11 @@ describe('Solr', () => {
 					fields: 'someField',
 					params: {
 						group: true,
-						'group.field': 'someField'
+						'group.field': 'someField',
+						'group.limit': 1,
+						'group.main': true,
+						rows: 500,
+						start: 0
 					}
 				})
 				.reply(400, {
@@ -808,7 +844,11 @@ describe('Solr', () => {
 					fields: 'someField',
 					params: {
 						group: true,
-						'group.field': 'someField'
+						'group.field': 'someField',
+						'group.limit': 1,
+						'group.main': true,
+						rows: 500,
+						start: 0
 					}
 				})
 				.reply(200, {
