@@ -37,35 +37,34 @@ Constructs the Solr driver instance, connected with the `config` object.
 }
 ```
 
-### ***async*** `createCore(model, name)`
+### ***async*** `createCore(model, shouldBuildSchema)`
 Creates a new core in the Solr URL, then build the fields schema for that core.
 
 - model `Model`: A model instance
-- name `String`: The name for the core to create
+- shouldBuildSchema `Boolean`: Specifies if should create the fields schema after creating the core. Default: `true`
 
-- Rejects: `SolrError`: When something bad occurs
+- Resolves `Boolean`: `true` if the operation was successful
+- Rejects `SolrError`: When something bad occurs
 
-### ***async*** `createSchema(model, core)`
-Build the fields schema using the schema defined in the model static getter `schema`.  
+### ***async*** `coreExists()`
+Creates a new core in the Solr URL, then build the fields schema for that core.
 
-- model `Model`: A model instance
-- core `String`: The core where the field schema will created. Default: `core` value from instance config.
+- Resolves `Boolean`: `true` if exists, `false` otherwise.
 
-- Rejects: `SolrError`: When something bad occurs
+### ***async*** `getSchema()`
+Get the current fields schema frol Solr
 
-- **IMPORTANT**:
-	- This method must be executed before any operation, otherwise Solr will set all new fields as an `array` of `strings`.
-	- This method can't replace or delete already existing fields schema in Solr.
+- Resolves `Array<Object>`: An array with the fields schema
 
-If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
+- Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `updateSchema(model)`
-Update the fields schema by replacing the current fields schema in Solr with the defined in the model static getter `schema`.
-**IMPORTANT**: This method can't create or delete already existing fields schema in Solr.
+Update the fields schema by syncing the current fields schema in Solr with the defined schema in the model static getter `schema`.
 
 - model `Model`: A model instance
 
-- Rejects: `SolrError`: When something bad occurs
+- Resolves `Boolean`: `true` if the operation was successful
+- Rejects `SolrError`: When something bad occurs
 
 If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
 

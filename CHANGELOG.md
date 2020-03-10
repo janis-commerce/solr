@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+## Added
+- `getSchema` method
+- `coreExists` method
+
+### Changed
+- `updateSchema` method now obtains the existing schema from Solr then synces it with model schema
+- `createCore` method
+	- **Usage parameters changed:**
+		- Not receives the core name anymore, it uses the core from the instance config.
+		- Can set if want to create the schemas after creating the core.
+	- Now verify if the core to create exists, then creates it only if not exists.
+
+### Removed
+- `createSchema` method, use `updateSchema` method instead
+
 ## [1.0.1] - 2020-02-20
 ### Fixed
 - Multi filtering issues with AND and OR operations
