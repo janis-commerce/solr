@@ -47,7 +47,7 @@ Creates a new core in the Solr URL, then build the fields schema for that core.
 - Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `coreExists()`
-Creates a new core in the Solr URL, then build the fields schema for that core.
+Checks if the core exists in Solr.
 
 - Resolves `Boolean`: `true` if exists, `false` otherwise.
 
