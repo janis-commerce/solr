@@ -18,14 +18,14 @@
   "license": "ISC",
   "homepage": "https://github.com/janis-commerce/solr.git#readme",
   "devDependencies": {
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.17.3",
-    "husky": "^2.4.1",
-    "mocha": "^5.2.0",
-    "nock": "^11.7.2",
-    "nyc": "^13.1.0",
-    "sinon": "^7.3.2"
+    "eslint-plugin-import": "^2.20.2",
+    "husky": "^4.2.3",
+    "mocha": "^7.1.1",
+    "nock": "^12.0.3",
+    "nyc": "^15.0.1",
+    "sinon": "^9.0.2"
   },
   "files": [
     "lib/"
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "lodash.merge": "^4.6.2",
-    "request": "^2.88.0",
+    "request": "^2.88.2",
     "superstruct": "0.6.1",
-    "uuid": "^3.4.0"
+    "uuid": "^7.0.3"
   }
 }

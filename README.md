@@ -26,6 +26,8 @@ Constructs the Solr driver instance, connected with the `config` object.
 - core `String` (required): Solr Core
 - user `String` (optional): Auth user
 - password `String` (optional but required if an user is specified): Auth password
+- readTimeout `Number` (optional): The read operations timeout in miliseconds. Default: `2000`
+- writeTimeout `Number` (optional): The write operations timeout in miliseconds. Default: `5000`
 
 **Config usage**
 ```js
@@ -393,6 +395,11 @@ Removes one or more documents in a solr core
 - Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
 
+### ***async*** `ping()`
+Checks if the Solr host and core is online
+
+- Resolves `Boolean`: `true` if the Solr ping status is `'OK'`, `false` otherwise
+
 ## Errors
 
 The errors are informed with a `SolrError`.
@@ -407,8 +414,9 @@ The codes are the following:
 | 4    | Invalid filter value      |
 | 5    | Unsupported filter        |
 | 6    | Request failed            |
-| 7    | Internal Solr error       |
-| 8    | Invalid parameters        |
+| 7    | Request timeout           |
+| 8    | Internal Solr error       |
+| 9    | Invalid parameters        |
 
 ## Usage
 ```js
@@ -489,6 +497,10 @@ const model = new Model();
 
 	// coreExists
 	await sorl.coreExists()
+	// > true
+
+	// ping
+	await solr.ping()
 	// > true
 })();
 ```

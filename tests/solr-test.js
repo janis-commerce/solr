@@ -107,7 +107,8 @@ describe('Solr', () => {
 		updateCommands: '/solr/some-core/update?commit=true',
 		get: '/solr/some-core/query',
 		schema: '/solr/some-core/schema',
-		schemaFields: '/solr/some-core/schema/fields'
+		schemaFields: '/solr/some-core/schema/fields',
+		ping: '/solr/some-core/admin/ping'
 	};
 
 	const model = new FakeModel();
@@ -132,11 +133,13 @@ describe('Solr', () => {
 			{ url: 'valid', core: 'valid', user: ['not a string'], password: 'valid' },
 			{ url: 'valid', core: 'valid', user: ['not a string'], password: ['not a string'] },
 			{ url: 'valid', core: 'valid', user: 'valid', password: ['not a string'] },
-			{ url: 'valid', core: 'valid', user: 'valid' }
+			{ url: 'valid', core: 'valid', user: 'valid' },
+			{ url: 'valid', core: 'valid', readTimeout: { not: 'a number' } },
+			{ url: 'valid', core: 'valid', writeTimeout: ['not a number'] }
 
 		].forEach(config => {
 
-			it('Should throw when the received config is invalid', async () => {
+			it('Should throw when the received config is invalid', () => {
 				assert.throws(() => new Solr(config), {
 					name: 'SolrError',
 					code: SolrError.codes.INVALID_CONFIG
@@ -144,6 +147,29 @@ describe('Solr', () => {
 			});
 		});
 
+		it('Should not set the read and write default timeouts when they are already set', () => {
+
+			const newSolr = new Solr({
+				url: host,
+				core: 'some-core',
+				readTimeout: 10000,
+				writeTimeout: 20000
+			});
+
+			assert.deepEqual(newSolr.readTimeout, 10000);
+			assert.deepEqual(newSolr.writeTimeout, 20000);
+		});
+
+		it('Should set the read and write default timeouts when they are not set', () => {
+
+			const newSolr = new Solr({
+				url: host,
+				core: 'some-core'
+			});
+
+			assert.deepEqual(newSolr.readTimeout, 2000);
+			assert.deepEqual(newSolr.writeTimeout, 5000);
+		});
 	});
 
 	describe('insert()', () => {
@@ -1100,6 +1126,48 @@ describe('Solr', () => {
 
 			assert.deepEqual(request.isDone(), false);
 			sandbox.assert.notCalled(Solr.prototype.updateSchema);
+		});
+	});
+
+	describe('ping()', () => {
+
+		it('Should return true when the Solr ping status is OK', async () => {
+
+			const request = nock(host)
+				.get(endpoints.ping)
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					status: 'OK'
+				});
+
+			assert.deepEqual(await solr.ping(), true);
+
+			request.done();
+		});
+
+		it('Should return false when the Solr ping status is not OK', async () => {
+
+			const request = nock(host)
+				.get(endpoints.ping)
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					status: 'ERROR'
+				});
+
+			assert.deepEqual(await solr.ping(), false);
+
+			request.done();
+		});
+
+		it('Should return false when the Solr ping request fails', async () => {
+
+			nock.disableNetConnect();
+
+			assert.deepEqual(await solr.ping(), false);
 		});
 	});
 });
