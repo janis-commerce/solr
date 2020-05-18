@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `commitUpdates` (commit) and `commitWithin` settings for update and updateCommands operation support
+- `errorCodes` getter for better error handling
+### Changed
+- `commit` value for update and updatedCommands from `true` to `false` by default
 
 ## [1.2.0] - 2020-04-19
 ### Added

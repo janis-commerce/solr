@@ -103,8 +103,8 @@ describe('Solr', () => {
 	const host = 'http://some-host.com';
 
 	const endpoints = {
-		update: '/solr/some-core/update/json/docs?commit=true',
-		updateCommands: '/solr/some-core/update?commit=true',
+		update: '/solr/some-core/update/json/docs?commit=false&commitWithin=10',
+		updateCommands: '/solr/some-core/update?commit=false&commitWithin=10',
 		get: '/solr/some-core/query',
 		schema: '/solr/some-core/schema',
 		schemaFields: '/solr/some-core/schema/fields',
@@ -135,7 +135,9 @@ describe('Solr', () => {
 			{ url: 'valid', core: 'valid', user: 'valid', password: ['not a string'] },
 			{ url: 'valid', core: 'valid', user: 'valid' },
 			{ url: 'valid', core: 'valid', readTimeout: { not: 'a number' } },
-			{ url: 'valid', core: 'valid', writeTimeout: ['not a number'] }
+			{ url: 'valid', core: 'valid', writeTimeout: ['not a number'] },
+			{ url: 'valid', core: 'valid', commitUpdates: { not: 'a number' } },
+			{ url: 'valid', core: 'valid', commitWithin: ['not a number'] }
 
 		].forEach(config => {
 
@@ -169,6 +171,40 @@ describe('Solr', () => {
 
 			assert.deepEqual(newSolr.readTimeout, 2000);
 			assert.deepEqual(newSolr.writeTimeout, 5000);
+		});
+
+		it('Should not set the commitUpdates and commitWithin defaults when they are already set', () => {
+
+			const newSolr = new Solr({
+				url: host,
+				core: 'some-core',
+				commitUpdates: true,
+				commitWithin: 20
+			});
+
+			assert.deepEqual(newSolr.commitUpdates, true);
+			assert.deepEqual(newSolr.commitWithin, 20);
+		});
+
+		it('Should set the commitUpdates and commitWithin defaults when they are not set', () => {
+
+			const newSolr = new Solr({
+				url: host,
+				core: 'some-core'
+			});
+
+			assert.deepEqual(newSolr.commitUpdates, false);
+			assert.deepEqual(newSolr.commitWithin, 10);
+		});
+	});
+
+	describe('Getters', () => {
+
+		describe('errorCodes', () => {
+
+			it('Should return the Solr error codes object', () => {
+				assert.deepStrictEqual(solr.errorCodes, SolrError.codes);
+			});
 		});
 	});
 

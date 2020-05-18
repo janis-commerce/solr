@@ -15,6 +15,24 @@ Whenever the `Model` type is mentioned in this document, it refers to an instanc
 
 This is used to configure which collection should be used, which unique indexes it has, among other stuff.
 
+## Getters
+- `errorCodes` *(instance getter)*: Returns an `[Object]` with the Solr [error codes](#Errors) for error handling.
+
+**Example**
+```js
+try {
+
+	await solr.insert(myModel, {my: 'item'});
+
+} catch(err) {
+
+	if(err && err.code === solr.errorCodes.REQUEST_TIMEOUT)
+		return myTimeoutHandler(err);
+
+	throw err;
+}
+```
+
 ## API
 
 ### `new Solr(config)`
@@ -28,6 +46,8 @@ Constructs the Solr driver instance, connected with the `config` object.
 - password `String` (optional but required if an user is specified): Auth password
 - readTimeout `Number` (optional): The read operations timeout in miliseconds. Default: `2000`
 - writeTimeout `Number` (optional): The write operations timeout in miliseconds. Default: `5000`
+- commitUpdates `Boolean` (optional): Set if the write operations should wait until Solr commits all the changes before returning. Default `false`.
+- commitWithin `Number` (optional): Set the time period (in miliseconds) that Solr must take to commit the changes made in write operations. Default: `10`.
 
 **Config usage**
 ```js
