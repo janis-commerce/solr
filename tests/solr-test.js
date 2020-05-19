@@ -103,8 +103,8 @@ describe('Solr', () => {
 	const host = 'http://some-host.com';
 
 	const endpoints = {
-		update: '/solr/some-core/update/json/docs?commit=false&commitWithin=10',
-		updateCommands: '/solr/some-core/update?commit=false&commitWithin=10',
+		update: '/solr/some-core/update/json/docs?commit=false&commitWithin=10000',
+		updateCommands: '/solr/some-core/update?commit=false&commitWithin=10000',
 		get: '/solr/some-core/query',
 		schema: '/solr/some-core/schema',
 		schemaFields: '/solr/some-core/schema/fields',
@@ -183,7 +183,7 @@ describe('Solr', () => {
 			});
 
 			assert.deepEqual(newSolr.commitUpdates, true);
-			assert.deepEqual(newSolr.commitWithin, 20);
+			assert.deepEqual(newSolr.commitWithin, 20000);
 		});
 
 		it('Should set the commitUpdates and commitWithin defaults when they are not set', () => {
@@ -194,7 +194,7 @@ describe('Solr', () => {
 			});
 
 			assert.deepEqual(newSolr.commitUpdates, false);
-			assert.deepEqual(newSolr.commitWithin, 10);
+			assert.deepEqual(newSolr.commitWithin, 10000);
 		});
 	});
 

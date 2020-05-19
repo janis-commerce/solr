@@ -47,7 +47,7 @@ Constructs the Solr driver instance, connected with the `config` object.
 - readTimeout `Number` (optional): The read operations timeout in miliseconds. Default: `2000`
 - writeTimeout `Number` (optional): The write operations timeout in miliseconds. Default: `5000`
 - commitUpdates `Boolean` (optional): Set if the write operations should wait until Solr commits all the changes before returning. Default `false`.
-- commitWithin `Number` (optional): Set the time period (in miliseconds) that Solr must take to commit the changes made in write operations. Default: `10`.
+- commitWithin `Number` (optional): Set the time period (in seconds) that Solr must take to commit the changes made in write operations. Default: `10`.
 
 **Config usage**
 ```js
