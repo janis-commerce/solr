@@ -11,6 +11,12 @@ describe('Helpers', () => {
 
 	describe('Request', () => {
 
+		let requestInstance;
+
+		beforeEach(() => {
+			requestInstance = new Request(null, 2000, 2000);
+		});
+
 		afterEach(() => {
 			nock.cleanAll();
 		});
@@ -30,7 +36,7 @@ describe('Helpers', () => {
 					.delay(5000)
 					.reply(200);
 
-				await assert.rejects(Request.get(url, null, null, null, 2000), {
+				await assert.rejects(requestInstance.get(url), {
 					name: 'SolrError',
 					code: SolrError.codes.REQUEST_TIMEOUT
 				});
@@ -42,7 +48,7 @@ describe('Helpers', () => {
 
 				nock.disableNetConnect();
 
-				await assert.rejects(Request.get(url), {
+				await assert.rejects(requestInstance.get(url), {
 					name: 'SolrError',
 					code: SolrError.codes.REQUEST_FAILED
 				});
@@ -58,7 +64,7 @@ describe('Helpers', () => {
 					.delay(5000)
 					.reply(200);
 
-				await assert.rejects(Request.post(url, null, null, null, 2000), {
+				await assert.rejects(requestInstance.post(url), {
 					name: 'SolrError',
 					code: SolrError.codes.REQUEST_TIMEOUT
 				});
@@ -70,7 +76,7 @@ describe('Helpers', () => {
 
 				nock.disableNetConnect();
 
-				await assert.rejects(Request.post(url), {
+				await assert.rejects(requestInstance.post(url), {
 					name: 'SolrError',
 					code: SolrError.codes.REQUEST_FAILED
 				});
