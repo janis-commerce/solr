@@ -1,6 +1,6 @@
 {
   "name": "@janiscommerce/solr",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Apache Solr Driver",
   "main": "./lib/solr.js",
   "scripts": {
