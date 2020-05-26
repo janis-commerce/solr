@@ -36,7 +36,7 @@
   "dependencies": {
     "lodash.merge": "^4.6.2",
     "request": "^2.88.2",
-    "superstruct": "0.6.1",
+    "superstruct": "0.6.2",
     "uuid": "^7.0.3"
   }
 }
