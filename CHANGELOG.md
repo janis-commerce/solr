@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.4.1] - 2020-05-26
+### Fixed
+- Reisntalled package and package-lock is now updated
+
 ## [1.4.0] - 2020-05-26
 ### Added
 - `readTimeout` and `writeTimeout` for every get and post method
