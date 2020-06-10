@@ -60,57 +60,79 @@ describe('Solr', () => {
 		{
 			name: 'string',
 			type: 'string',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'number',
 			type: 'pint',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'float',
 			type: 'pfloat',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'double',
 			type: 'pdouble',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'long',
 			type: 'plong',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'boolean',
 			type: 'boolean',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'date',
 			type: 'pdate',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'array',
 			type: 'string',
-			multiValued: true
+			multiValued: true,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'text',
 			type: 'text_general',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'object.property',
 			type: 'string',
-			multiValued: false
+			multiValued: false,
+			indexed: true,
+			stored: true
 		},
 		{
 			name: 'object.subproperty.property',
 			type: 'pint',
-			multiValued: true
+			multiValued: true,
+			indexed: true,
+			stored: true
 		}
 	];
 
