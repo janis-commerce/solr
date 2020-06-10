@@ -43,6 +43,7 @@ describe('Solr', () => {
 				boolean: { type: 'boolean' },
 				date: { type: 'date' },
 				array: { type: ['string'] },
+				text: { type: 'text' },
 				object: {
 					type: {
 						property: 'string',
@@ -58,31 +59,38 @@ describe('Solr', () => {
 	const builtSchemas = [
 		{
 			name: 'string',
-			type: 'string'
+			type: 'string',
+			multiValued: false
 		},
 		{
 			name: 'number',
-			type: 'pint'
+			type: 'pint',
+			multiValued: false
 		},
 		{
 			name: 'float',
-			type: 'pfloat'
+			type: 'pfloat',
+			multiValued: false
 		},
 		{
 			name: 'double',
-			type: 'pdouble'
+			type: 'pdouble',
+			multiValued: false
 		},
 		{
 			name: 'long',
-			type: 'plong'
+			type: 'plong',
+			multiValued: false
 		},
 		{
 			name: 'boolean',
-			type: 'boolean'
+			type: 'boolean',
+			multiValued: false
 		},
 		{
 			name: 'date',
-			type: 'pdate'
+			type: 'pdate',
+			multiValued: false
 		},
 		{
 			name: 'array',
@@ -90,8 +98,14 @@ describe('Solr', () => {
 			multiValued: true
 		},
 		{
+			name: 'text',
+			type: 'text_general',
+			multiValued: false
+		},
+		{
 			name: 'object.property',
-			type: 'string'
+			type: 'string',
+			multiValued: false
 		},
 		{
 			name: 'object.subproperty.property',

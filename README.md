@@ -127,6 +127,7 @@ The following table shows all the supported field types:
 | float          | pfloat           |
 | double         | pdouble          |
 | long           | plong            |
+| text           | text_general     |
 
 In case of an array field, the Solr equivalence will be the same for each field, only will set the `multiValued` property to `true`.
 
