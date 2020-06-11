@@ -1,15 +1,13 @@
 'use strict';
 
 const assert = require('assert');
-
 const nock = require('nock');
-
 const sandbox = require('sinon').createSandbox();
 
 const { base64 } = require('../lib/helpers/utils');
+const Request = require('../lib/helpers/request');
 
 const Solr = require('../lib/solr');
-
 const SolrError = require('../lib/solr-error');
 
 describe('Solr', () => {
@@ -1014,8 +1012,35 @@ describe('Solr', () => {
 			const request = nock(host)
 				.post(endpoints.schema, {
 					'add-field': builtSchemas.slice(3),
-					'replace-field': currentSchema,
+					'replace-field': [],
 					'delete-field': [{ name: deprecatedField.name }]
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			await assert.doesNotReject(solr.updateSchema(model));
+
+			sandbox.assert.calledOnce(Solr.prototype.reloadCore);
+
+			request.done();
+		});
+
+		it('Should replace only the fields in Solr that are not equal that current schemas', async () => {
+
+			sandbox.stub(Solr.prototype, 'getSchema')
+				.resolves([{ ...builtSchemas[0], type: 'text' }, ...builtSchemas.slice(1)]);
+
+			sandbox.stub(Solr.prototype, 'reloadCore')
+				.resolves(true);
+
+			const request = nock(host)
+				.post(endpoints.schema, {
+					'add-field': [],
+					'replace-field': [builtSchemas[0]],
+					'delete-field': []
 				})
 				.reply(200, {
 					responseHeader: {
@@ -1058,6 +1083,20 @@ describe('Solr', () => {
 			sandbox.assert.calledOnce(Solr.prototype.reloadCore);
 
 			request.done();
+		});
+
+		it('Shouldn\'t call Solr POST api to update the schema when there are not changes to made', async () => {
+
+			sandbox.stub(Solr.prototype, 'getSchema')
+				.resolves(builtSchemas);
+
+			sandbox.spy(Request.prototype, 'post');
+			sandbox.spy(Solr.prototype, 'reloadCore');
+
+			await assert.doesNotReject(solr.updateSchema(model));
+
+			sandbox.assert.notCalled(Solr.prototype.reloadCore);
+			sandbox.assert.notCalled(Request.prototype.post);
 		});
 
 		it('Should throw when the model is invalid', async () => {

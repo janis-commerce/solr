@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - `updateSchemas()` method reloads the core after updating the schema
+- `updateSchemas()` method replace fields that was modified and not make changes if current schema was not changed
 
 ## [1.4.1] - 2020-05-26
 ### Fixed
