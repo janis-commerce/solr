@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - `text_general` Solr field type as `text` field type
+- `reloadCore()` method
+
+### Changed
+- `updateSchemas()` method reloads the core after updating the schema
 
 ## [1.4.1] - 2020-05-26
 ### Fixed

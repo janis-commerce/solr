@@ -68,6 +68,12 @@ Creates a new core in the Solr URL, then build the fields schema for that core.
 - Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
 
+### ***async*** `reloadCore()`
+Reloads the Solr core
+
+- Resolves `Boolean`: `true` if the operation was successful
+- Rejects `SolrError`: When something bad occurs
+
 ### ***async*** `coreExists()`
 Checks if the core exists in Solr.
 
@@ -514,6 +520,10 @@ const model = new Model();
 
 	// createCore
 	await solr.createCore(model);
+	// > true
+
+	// reloadCore
+	await solr.reloadCore(model);
 	// > true
 
 	// coreExists

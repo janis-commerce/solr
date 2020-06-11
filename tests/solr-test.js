@@ -996,7 +996,7 @@ describe('Solr', () => {
 
 	describe('updateSchema()', () => {
 
-		it('Should call Solr POST api to update the schema', async () => {
+		it('Should call Solr POST api to update the schema and reload the core', async () => {
 
 			const currentSchema = builtSchemas.slice(0, 3);
 
@@ -1007,6 +1007,9 @@ describe('Solr', () => {
 
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves([...currentSchema, deprecatedField]);
+
+			sandbox.stub(Solr.prototype, 'reloadCore')
+				.resolves(true);
 
 			const request = nock(host)
 				.post(endpoints.schema, {
@@ -1022,6 +1025,8 @@ describe('Solr', () => {
 
 			await assert.doesNotReject(solr.updateSchema(model));
 
+			sandbox.assert.calledOnce(Solr.prototype.reloadCore);
+
 			request.done();
 		});
 
@@ -1032,6 +1037,9 @@ describe('Solr', () => {
 
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves(builtSchemas);
+
+			sandbox.stub(Solr.prototype, 'reloadCore')
+				.resolves(true);
 
 			const request = nock(host)
 				.post(endpoints.schema, {
@@ -1047,6 +1055,8 @@ describe('Solr', () => {
 
 			await assert.doesNotReject(solr.updateSchema(model));
 
+			sandbox.assert.calledOnce(Solr.prototype.reloadCore);
+
 			request.done();
 		});
 
@@ -1059,6 +1069,26 @@ describe('Solr', () => {
 				name: 'SolrError',
 				code: SolrError.codes.INVALID_MODEL
 			});
+		});
+	});
+
+	describe('reloadCore()', () => {
+
+		it('Should return true when Solr core was successfully reloaded', async () => {
+
+			const request = nock(host)
+				.post('/solr/admin/cores?action=RELOAD&core=some-core')
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
+				});
+
+			const result = await solr.reloadCore();
+
+			assert.deepEqual(result, true);
+
+			request.done();
 		});
 	});
 
