@@ -31,9 +31,33 @@ describe('Solr', () => {
 			};
 		}
 
+		static get fieldTypes() {
+			return {
+				someFieldType: {
+					class: 'solr.TextField',
+					indexed: true,
+					stored: true,
+					multiValued: false
+				},
+				otherFieldType: {
+					class: 'solr.StrField',
+					indexed: false,
+					stored: true,
+					multiValued: true
+				},
+				anotherFieldType: {
+					class: 'solr.TextField',
+					indexed: true,
+					stored: true
+				}
+			};
+		}
+
 		static get schema() {
 			return {
-				string: true,
+				custom: { type: 'someFieldType' },
+				otherCustom: { type: 'otherFieldType' },
+				string: { type: 'string' },
 				number: { type: 'number' },
 				float: { type: 'float' },
 				double: { type: 'double' },
@@ -55,6 +79,14 @@ describe('Solr', () => {
 	}
 
 	const builtSchemas = [
+		{
+			name: 'custom',
+			type: 'someFieldType'
+		},
+		{
+			name: 'otherCustom',
+			type: 'otherFieldType'
+		},
 		{
 			name: 'string',
 			type: 'string',
@@ -134,6 +166,38 @@ describe('Solr', () => {
 		}
 	];
 
+	const builtFieldTypes = [
+		{
+			name: 'someFieldType',
+			class: 'solr.TextField',
+			indexed: true,
+			stored: true,
+			multiValued: false
+		},
+		{
+			name: '_internal_solr_field',
+			class: 'solr.FooBar',
+			someProp: true
+		},
+		{
+			name: 'otherFieldType',
+			class: 'solr.StrField',
+			indexed: false,
+			stored: true,
+			multiValued: true
+		},
+		{
+			name: 'deprecatedFieldType',
+			class: 'solr.StrField'
+		},
+		{
+			name: 'anotherFieldType',
+			class: 'solr.strField',
+			indexed: true,
+			stored: true
+		}
+	];
+
 	const host = 'http://some-host.com';
 
 	const endpoints = {
@@ -142,6 +206,7 @@ describe('Solr', () => {
 		get: '/solr/some-core/query',
 		schema: '/solr/some-core/schema',
 		schemaFields: '/solr/some-core/schema/fields',
+		schemaFieldTypes: '/solr/some-core/schema/fieldtypes',
 		ping: '/solr/some-core/admin/ping'
 	};
 
@@ -989,7 +1054,6 @@ describe('Solr', () => {
 
 			request.done();
 		});
-
 	});
 
 	describe('updateSchema()', () => {
@@ -1003,6 +1067,9 @@ describe('Solr', () => {
 				type: 'string'
 			};
 
+			sandbox.stub(Solr.prototype, 'getFieldTypes')
+				.resolves(builtFieldTypes.slice(1));
+
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves([...currentSchema, deprecatedField]);
 
@@ -1011,8 +1078,9 @@ describe('Solr', () => {
 
 			const request = nock(host)
 				.post(endpoints.schema, {
+					'add-field-type': [builtFieldTypes[0]],
+					'replace-field-type': [{ ...builtFieldTypes[4], class: 'solr.TextField' }],
 					'add-field': builtSchemas.slice(3),
-					'replace-field': [],
 					'delete-field': [{ name: deprecatedField.name }]
 				})
 				.reply(200, {
@@ -1030,6 +1098,9 @@ describe('Solr', () => {
 
 		it('Should replace only the fields in Solr that are not equal that current schemas', async () => {
 
+			sandbox.stub(Solr.prototype, 'getFieldTypes')
+				.returns([...builtFieldTypes.slice(0, 3), { ...builtFieldTypes[4], class: 'solr.TextField' }]);
+
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves([{ ...builtSchemas[0], type: 'text' }, ...builtSchemas.slice(1)]);
 
@@ -1038,9 +1109,7 @@ describe('Solr', () => {
 
 			const request = nock(host)
 				.post(endpoints.schema, {
-					'add-field': [],
-					'replace-field': [builtSchemas[0]],
-					'delete-field': []
+					'replace-field': [builtSchemas[0]]
 				})
 				.reply(200, {
 					responseHeader: {
@@ -1060,6 +1129,12 @@ describe('Solr', () => {
 			sandbox.stub(FakeModel, 'schema')
 				.get(() => undefined);
 
+			sandbox.stub(FakeModel, 'fieldTypes')
+				.get(() => undefined);
+
+			sandbox.stub(Solr.prototype, 'getFieldTypes')
+				.returns([]);
+
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves(builtSchemas);
 
@@ -1068,8 +1143,6 @@ describe('Solr', () => {
 
 			const request = nock(host)
 				.post(endpoints.schema, {
-					'add-field': [],
-					'replace-field': [],
 					'delete-field': builtSchemas.map(({ name }) => ({ name }))
 				})
 				.reply(200, {
@@ -1086,6 +1159,9 @@ describe('Solr', () => {
 		});
 
 		it('Shouldn\'t call Solr POST api to update the schema when there are not changes to made', async () => {
+
+			sandbox.stub(Solr.prototype, 'getFieldTypes')
+				.returns([...builtFieldTypes.slice(0, 3), { ...builtFieldTypes[4], class: 'solr.TextField' }]);
 
 			sandbox.stub(Solr.prototype, 'getSchema')
 				.resolves(builtSchemas);
@@ -1304,11 +1380,29 @@ describe('Solr', () => {
 			request.done();
 		});
 
-		it('Should return false when the Solr ping request fails', async () => {
+		it('Should reject when the Solr ping request fails', async () => {
 
 			nock.disableNetConnect();
 
-			assert.deepEqual(await solr.ping(), false);
+			await assert.rejects(solr.ping(), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_FAILED
+			});
+		});
+
+		it('Should reject when the Solr ping fails due timeout', async () => {
+
+			const request = nock(host)
+				.get(endpoints.ping)
+				.delay(5000)
+				.reply(200);
+
+			await assert.rejects(solr.ping(), {
+				name: 'SolrError',
+				code: SolrError.codes.REQUEST_TIMEOUT
+			});
+
+			request.done();
 		});
 	});
 });
