@@ -87,14 +87,15 @@ Get the current fields schema frol Solr
 - Rejects `SolrError`: When something bad occurs
 
 ### ***async*** `updateSchema(model)`
-Update the fields schema by syncing the current fields schema in Solr with the defined schema in the model static getter `schema`.
+Update the fields types and schema by syncing the current fields schema in Solr with the defined schema in the model static getter `schema`* and `fieldTypes`**.
 
 - model `Model`: A model instance
 
 - Resolves `Boolean`: `true` if the operation was successful
 - Rejects `SolrError`: When something bad occurs
 
-If you need details about how to define the fields schema in the model, see the schema apart [below](#schema)
+*If you need details about how to define the fields schema in the model, see the schema apart [below](#Fields-schema)  
+**If you need details about how to define the field types in the model, see the field types apart [below](#Field-types)
 
 #### Fields schema
 
@@ -200,6 +201,36 @@ These fields stores an object with multiple properties that **can be of differen
 ```
 
 It will show as a **full object** on `get` operations.
+
+#### Field types
+Custom field types can be defined in the model static getter `fieldTypes` like this:
+
+```js
+class MyModel extends Model {
+
+	static get fieldTypes(){
+
+		return {
+			myFieldType: {
+				class: 'solr.TextField',
+				indexed: false,
+				stored: true
+				// ...
+			}
+		}
+	}
+
+	static get schema(){
+
+		return {
+			myCustomField: { type: 'myFieldType' }
+			// ...
+		}
+	}
+}
+```
+
+The field type content accepts native Solr field type properties, please check the [Solr field types documentation for more information](https://lucene.apache.org/solr/guide/8_5/field-type-definitions-and-properties.html#field-type-definitions-and-properties).
 
 ### ***async*** `insert(model, item)`
 Inserts one document in a solr core
@@ -426,6 +457,7 @@ Removes one or more documents in a solr core
 Checks if the Solr host and core is online
 
 - Resolves `Boolean`: `true` if the Solr ping status is `'OK'`, `false` otherwise
+- Rejects: `SolrError`: When something bad occurs
 
 ## Errors
 

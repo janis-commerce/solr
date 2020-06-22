@@ -57,7 +57,7 @@ describe('Solr', () => {
 			return {
 				custom: { type: 'someFieldType' },
 				otherCustom: { type: 'otherFieldType' },
-				string: { type: 'string' },
+				string: true,
 				number: { type: 'number' },
 				float: { type: 'float' },
 				double: { type: 'double' },
@@ -1056,6 +1056,27 @@ describe('Solr', () => {
 		});
 	});
 
+	describe('getFieldTypes()', () => {
+
+		it('Should call Solr GET api to get the field types', async () => {
+
+			const request = nock(host)
+				.get(endpoints.schemaFieldTypes)
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					fieldTypes: builtFieldTypes
+				});
+
+			const currentSchemas = await solr.getFieldTypes();
+
+			assert.deepStrictEqual(currentSchemas, builtFieldTypes);
+
+			request.done();
+		});
+	});
+
 	describe('updateSchema()', () => {
 
 		it('Should call Solr POST api to update the schema and reload the core', async () => {
@@ -1373,6 +1394,21 @@ describe('Solr', () => {
 						status: 0
 					},
 					status: 'ERROR'
+				});
+
+			assert.deepEqual(await solr.ping(), false);
+
+			request.done();
+		});
+
+		it('Should return false when the Solr ping status response is invalid', async () => {
+
+			const request = nock(host)
+				.get(endpoints.ping)
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					}
 				});
 
 			assert.deepEqual(await solr.ping(), false);
