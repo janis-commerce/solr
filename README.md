@@ -107,7 +107,7 @@ The field types can be defined in the model static getter `schema` like this:
 ```js
 class MyModel extends Model {
 
-	static get schema(){
+	static get schema() {
 
 		return {
 			myStringField: true, // Default type string
@@ -208,7 +208,7 @@ Custom field types can be defined in the model static getter `fieldTypes` like t
 ```js
 class MyModel extends Model {
 
-	static get fieldTypes(){
+	static get fieldTypes() {
 
 		return {
 			myFieldType: {
@@ -220,7 +220,7 @@ class MyModel extends Model {
 		}
 	}
 
-	static get schema(){
+	static get schema() {
 
 		return {
 			myCustomField: { type: 'myFieldType' }
@@ -340,7 +340,7 @@ The filter types can be defined in the model static getter `fields` like this:
 ```js
 class MyModel extends Model {
 	
-	static get fields(){
+	static get fields() {
 
 		return {
 			myField: {
@@ -543,7 +543,7 @@ const model = new Model();
 	// > true
 	
 	// getSchema
-	await solr.getSchema()
+	await solr.getSchema();
 	// > [{ name: 'someField', type: 'string }]
 
 	// updateSchema
@@ -559,11 +559,11 @@ const model = new Model();
 	// > true
 
 	// coreExists
-	await sorl.coreExists()
+	await sorl.coreExists();
 	// > true
 
 	// ping
-	await solr.ping()
+	await solr.ping();
 	// > true
 })();
 ```
