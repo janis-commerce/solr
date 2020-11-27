@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.7.0] - 2020-11-27
+### Added
+- Filter type `search`
+- **GitHub Actions**  for workflows `build`, `coverage` and `publish`
+
 ## [1.6.0] - 2020-06-23
 ### Added
 - Solr field types creation from model

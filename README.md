@@ -1,7 +1,8 @@
 # Solr
 
-[![Build Status](https://travis-ci.org/janis-commerce/solr.svg?branch=master)](https://travis-ci.org/janis-commerce/solr)
+![Build Status](https://github.com/janis-commerce/solr/workflows/Build%20Status/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/janis-commerce/solr/badge.svg?branch=master)](https://coveralls.io/github/janis-commerce/solr?branch=master)
+[![npm version](https://badge.fury.io/js/%40janiscommerce%2Fsolr.svg)](https://www.npmjs.com/package/@janiscommerce/solr)
 
 Apache Solr Driver
 
@@ -369,6 +370,7 @@ The following table shows all the supported filter types:
 | -------------- | ------------------ |
 | equal          | field:"value"      |
 | notEqual       | -field:"value"     |
+| search 	     | field:\*value\*    |
 | greater        | field:{value TO *} |
 | greaterOrEqual | field:[value TO *] |
 | lesser         | field:{* TO value} |
