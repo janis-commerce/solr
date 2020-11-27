@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.7.1] - 2020-11-27
+### Fixed
+- Fixed filter type `search` for multiple words
+
 ## [1.7.0] - 2020-11-27
 ### Added
 - Filter type `search`

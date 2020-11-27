@@ -45,7 +45,7 @@ describe('Helpers', () => {
 					'customDefault:[32 TO *]',
 					'equal:"something"',
 					'-notEqual:"something"',
-					'search:*foo*',
+					'search:*"foo"*',
 					'greater:{10 TO *}',
 					'greaterOrEqual:[10 TO *]',
 					'lesser:{* TO 10}',
