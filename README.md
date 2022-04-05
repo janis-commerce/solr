@@ -260,6 +260,116 @@ Searches distinct values of a property in a solr core
 - Resolves `Array<Object>`: An array of documents
 - Rejects `SolrError`: When something bad occurs
 
+### ***async*** `group(model, [parameters])`
+Group results by field or fields
+
+- model: `Model`: A model instance
+- parameters: `Object` (required): 
+  - **field** `String|Array<string>`: The field or fields to group by
+  - **order** `Object`: -- described below in `get()` method.
+  - **filters** `Object`: -- described below in `get()` method.
+  - **limit** `Number`: -- described below in `get()` method. (Default: 1)
+
+- Resolves `Object`: An object with the grouped field and its count and items.
+- Rejects `SolrError`: When something bad occurs
+
+Example:
+```js
+
+const groupedResponse = await solr.group(model, { field: 'someField' });
+
+// Expected response
+{
+	someField: {
+		count: 150,
+		groups: {
+			someFieldValue: {
+				count: 75,
+				items: [
+					{ someField: 'someFieldValue', otherField: 'otherFieldValue' },
+					// ...
+				]
+			},
+			someFieldValue2: {
+				count: 75,
+				items: [
+					{ someField: 'someFieldValue2', otherField: 'anotherFieldValue' },
+					// ...
+				]
+			}
+		}
+	}
+}
+```
+
+### ***async*** `facet(model, [parameters])`
+Get facet counts by field or pivot
+
+- model: `Model`: A model instance
+- parameters: `Object` (required): 
+  - **field** `String`: The facet field (required if pivot is not received)
+  - **pivot** `String|Array<string>`: The facet pivot (required if field is not received)
+    - This field gives different results depending of how you use it:
+      - Sending a string with the field name (`{ pivot: 'myField' }`) will facet the results by that field (same as using field param).
+      - Sending a string with more than a field separated by comma (`{ pivot: 'myField,anotherField' }`) will facet results by that field and the rest of the combination recursively.
+      - Sending an array of strings with field names (`['myField', 'anotherField']`) will facet the results by each of them but the response will still be a single array.
+  - **order** `Object`: -- described below in `get()` method.
+  - **filters** `Object`: -- described below in `get()` method.
+  - **limit** `Number`: -- described below in `get()` method. (Default: 1)
+  - **page** `Number`: -- described below in `get()` method.
+
+- Resolves `Array<object>`: An array with the facet results
+- Rejects `SolrError`: When something bad occurs
+
+Example:
+```js
+
+// Using field
+const facetResponse = await solr.facet(model, { field: 'someField' });
+
+// Expected response
+[
+	{ field: 'someField', value: 'someFieldValue', count: 125 },
+	{ field: 'someField', value: 'otherFieldValue', count: 356 }
+]
+
+// Using pivot (single field)
+const facetResponse = await solr.facet(model, { pivot: 'someField' });
+
+// Expected response
+[
+	{ field: 'someField', value: 'someFieldValue', count: 125 },
+	{ field: 'someField', value: 'otherFieldValue', count: 356 }
+]
+
+// Using pivot (combined fields)
+const facetResponse = await solr.facet(model, { pivot: 'someField,otherField' });
+
+// Expected response
+[
+	{
+		field: 'someField',
+		value: 'someFieldValue',
+		count: 150,
+		pivot: [
+			{ field: 'otherField', value: 'otherFieldValue', count: 75 },
+			{ field: 'otherField', value: 'otherFieldValue2', count: 75 }
+		]
+	}
+]
+
+// Using pivot (array of fields)
+const facetResponse = await solr.facet(model, { pivot: ['someField', 'otherField'] });
+
+// Expected response
+[
+	{ field: 'someField', value: 'someFieldValue', count: 125 },
+	{ field: 'someField', value: 'otherFieldValue', count: 356 },
+	{ field: 'otherField', value: 'otherFieldValue', count: 3025 },
+	{ field: 'otherField', value: 'anotherFieldValue', count: 1250 }
+]
+```
+
 ### ***async*** `get(model, [parameters])`
 Searches documents in a solr core
 

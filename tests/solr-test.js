@@ -1035,6 +1035,385 @@ describe('Solr', () => {
 		});
 	});
 
+	describe('facet()', () => {
+
+		it('Should call Solr GET api with facet field params and format the response correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					offset: 0,
+					limit: 1,
+					params: {
+						facet: true,
+						'facet.field': 'someField'
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					facet_counts: {
+						facet_fields: {
+							someField: [
+								'someFieldValue', 125,
+								'otherFieldValue', 356
+							]
+						}
+					},
+					response: {
+						docs: [
+							{ someField: 'someFieldValue', otherData: 2 }
+						]
+					}
+				});
+
+			const result = await solr.facet(model, { field: 'someField' });
+
+			assert.deepStrictEqual(result, [
+				{ field: 'someField', value: 'someFieldValue', count: 125 },
+				{ field: 'someField', value: 'otherFieldValue', count: 356 }
+			]);
+
+			request.done();
+		});
+
+		it('Should call Solr GET api with facet pivot params and format the response correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					offset: 0,
+					limit: 1,
+					params: {
+						facet: true,
+						'facet.pivot': 'someField,otherField'
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					facet_counts: {
+						facet_pivot: {
+							'someField,otherField': [
+								{
+									field: 'someField',
+									value: 'someFieldValue',
+									count: 125,
+									pivot: [
+										{ field: 'otherField', value: 'otherFieldValue', count: 352 }
+									]
+								}
+							]
+						}
+					},
+					response: {
+						docs: [
+							{ someField: 'someFieldValue', otherData: 2 }
+						]
+					}
+				});
+
+			const result = await solr.facet(model, { pivot: 'someField,otherField' });
+
+			assert.deepStrictEqual(result, [
+				{
+					field: 'someField',
+					value: 'someFieldValue',
+					count: 125,
+					pivot: [
+						{ field: 'otherField', value: 'otherFieldValue', count: 352 }
+					]
+				}
+			]);
+
+			request.done();
+		});
+
+		it('Should return pivot results when field and pivot params are received', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					offset: 0,
+					limit: 1,
+					params: {
+						facet: true,
+						'facet.field': 'someField',
+						'facet.pivot': 'someField,otherField'
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					facet_counts: {
+						facet_fields: {
+							someField: [
+								'someFieldValue', 125,
+								'otherFieldValue', 356
+							]
+						},
+						facet_pivot: {
+							'someField,otherField': [
+								{
+									field: 'someField',
+									value: 'someFieldValue',
+									count: 125,
+									pivot: [
+										{ field: 'otherField', value: 'otherFieldValue', count: 352 }
+									]
+								}
+							]
+						}
+					},
+					response: {
+						docs: [
+							{ someField: 'someFieldValue', otherData: 2 }
+						]
+					}
+				});
+
+			const result = await solr.facet(model, { field: 'someField', pivot: 'someField,otherField' });
+
+			assert.deepStrictEqual(result, [
+				{
+					field: 'someField',
+					value: 'someFieldValue',
+					count: 125,
+					pivot: [
+						{ field: 'otherField', value: 'otherFieldValue', count: 352 }
+					]
+				}
+			]);
+
+			request.done();
+		});
+
+		it('Should format limit, paging, filters and sorting params correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					offset: 5,
+					limit: 5,
+					params: {
+						facet: true,
+						'facet.field': 'someField'
+					},
+					filter: ['someField:"someFieldValue"'],
+					sort: 'someField asc'
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					facet_counts: {
+						facet_fields: {
+							someField: ['someFieldValue', 125]
+						}
+					},
+					response: {
+						docs: [
+							{ someField: 'someFieldValue', otherData: 2 }
+						]
+					}
+				});
+
+			const result = await solr.facet(model, {
+				field: 'someField',
+				limit: 5,
+				page: 2,
+				order: { someField: 'asc' },
+				filters: {
+					someField: 'someFieldValue'
+				}
+			});
+
+			assert.deepStrictEqual(result, [
+				{ field: 'someField', value: 'someFieldValue', count: 125 }
+			]);
+
+			request.done();
+		});
+
+		it('Should reject when no params are received', async () => {
+
+			await assert.rejects(solr.facet(model), {
+				name: SolrError.name,
+				code: SolrError.codes.INVALID_PARAMETERS
+			});
+		});
+
+		[
+			undefined,
+			{ not: 'a string' },
+			['a', 'literal', 'array']
+		].forEach(field => {
+
+			it('Should reject when field param is invalid', async () => {
+
+				await assert.rejects(solr.facet(model, { field }), {
+					name: SolrError.name,
+					code: SolrError.codes.INVALID_PARAMETERS
+				});
+			});
+		});
+
+		[
+			undefined,
+			{ not: 'a string' }
+		].forEach(pivot => {
+
+			it('Should reject when pivot param is invalid', async () => {
+
+				await assert.rejects(solr.facet(model, { pivot }), {
+					name: SolrError.name,
+					code: SolrError.codes.INVALID_PARAMETERS
+				});
+			});
+		});
+	});
+
+	describe('group()', () => {
+
+		it('Should call Solr GET api with group params and format the response correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					params: {
+						group: true,
+						'group.field': 'someField',
+						'group.limit': 1
+					}
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					grouped: {
+						someField: {
+							matches: 125,
+							groups: [
+								{
+									groupValue: 'someFieldValue',
+									doclist: {
+										numFound: 125,
+										docs: [
+											{ someField: 'someFieldValue', otherData: 2 }
+										]
+									}
+								}
+							]
+						}
+					}
+				});
+
+			const result = await solr.group(model, { field: 'someField' });
+
+			assert.deepStrictEqual(result, {
+				someField: {
+					count: 125,
+					groups: {
+						someFieldValue: {
+							count: 125,
+							items: [
+								{ someField: 'someFieldValue', otherData: 2 }
+							]
+						}
+					}
+				}
+			});
+
+			request.done();
+		});
+
+		it('Should format limit and filters params correctly', async () => {
+
+			const request = nock(host)
+				.get(endpoints.get, {
+					query: '*:*',
+					params: {
+						group: true,
+						'group.field': 'someField',
+						'group.limit': 5
+					},
+					filter: ['someField:"someFieldValue"'],
+					sort: 'someField asc'
+				})
+				.reply(200, {
+					responseHeader: {
+						status: 0
+					},
+					grouped: {
+						someField: {
+							matches: 125,
+							groups: [
+								{
+									groupValue: 'someFieldValue',
+									doclist: {
+										numFound: 125,
+										docs: [
+											{ someField: 'someFieldValue', otherData: 2 }
+										]
+									}
+								}
+							]
+						}
+					}
+				});
+
+			const result = await solr.group(model, {
+				field: 'someField',
+				limit: 5,
+				order: { someField: 'asc' },
+				filters: {
+					someField: 'someFieldValue'
+				}
+			});
+
+			assert.deepStrictEqual(result, {
+				someField: {
+					count: 125,
+					groups: {
+						someFieldValue: {
+							count: 125,
+							items: [
+								{ someField: 'someFieldValue', otherData: 2 }
+							]
+						}
+					}
+				}
+			});
+
+			request.done();
+		});
+
+		it('Should reject when no params are received', async () => {
+
+			await assert.rejects(solr.group(model), {
+				name: SolrError.name,
+				code: SolrError.codes.INVALID_PARAMETERS
+			});
+		});
+
+		[
+			undefined,
+			{ not: 'a string' }
+		].forEach(field => {
+
+			it('Should reject when field param is invalid', async () => {
+
+				await assert.rejects(solr.group(model, { field }), {
+					name: SolrError.name,
+					code: SolrError.codes.INVALID_PARAMETERS
+				});
+			});
+		});
+	});
+
 	describe('getSchema()', () => {
 
 		it('Should call Solr GET api to get the schema', async () => {
